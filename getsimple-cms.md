@@ -37,7 +37,9 @@ This surfaced additional exposed data files, which were pulled directly with cur
 Foothold:
 
 Since /admin/ was explicitly disallowed in robots.txt, that was the first place to check manually: http://target_ip/admin.
+
 <img width="404" height="378" alt="image" src="https://github.com/user-attachments/assets/680af34e-de35-47a0-b0ed-8e718233f302" />
+
 
 Logged in using the default credentials admin:admin, with no lockout or rate limiting in place.
 
