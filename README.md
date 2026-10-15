@@ -6,4 +6,5 @@ A collection of my HackTheBox writeups from cybersecurity coursework and self-st
 - [GetSimple CMS](./getsimple-cms.md) - Web enumeration and exploitation
 - [Inlanefreight Recon](./inlanefreight-recon.md) - OSINT and web reconnaissance
 - [Network Services Password Attacks](network-services-password-attacks.md) - Password Spraying
-- [Using the Metasploit Framework](metasploit-framework.md) - Exploitation and Post-Exploitation
+- [Using the Metasploit Framework](metasploit-framework.md) - Exploitation and Post-
+- [GreenHorn](greenhorn-writeup/) - Pluck CMS file-upload to RCE and password reuse
