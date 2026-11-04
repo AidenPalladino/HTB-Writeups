@@ -1,10 +1,19 @@
-# HTB-Writeups
+# HTB Write-ups
 
-A collection of my HackTheBox writeups from cybersecurity coursework and self-study. 
+Write-ups from Hack The Box machines and HTB Academy modules I've completed. Flags are redacted.
 
-## Writeups
-- [GetSimple CMS](./getsimple-cms.md) - Web enumeration and exploitation
-- [Inlanefreight Recon](./inlanefreight-recon.md) - OSINT and web reconnaissance
-- [Network Services Password Attacks](network-services-password-attacks.md) - Password Spraying
-- [Using the Metasploit Framework](metasploit-framework.md) - Exploitation and Post-
-- [GreenHorn](greenhorn-writeup/) - Pluck CMS file-upload to RCE and password reuse
+## Machines
+
+| Machine | Difficulty | Summary |
+|---|---|---|
+| [GreenHorn](greenhorn-writeup/) | Easy (Linux) | Leaked hash in a public Gitea repo, cracked with Hashcat, Pluck CMS module upload to a shell, password reuse for the user flag |
+
+## HTB Academy
+
+| Module | Write-up | Topics |
+|---|---|---|
+| Getting Started | [GetSimple CMS](getsimple-cms.md) | Web enumeration, default creds, PHP web shell, sudo privilege escalation |
+| Using the Metasploit Framework | [Metasploit](metasploit-framework.md) | Module search, payloads, sessions, Meterpreter, Kiwi |
+| Password Attacks | [Network Services](network-services-password-attacks.md) | Password spraying against WinRM, SSH, RDP, and SMB |
+
+I only publish retired machines and Tier 0 Academy modules, per HTB's rules.
