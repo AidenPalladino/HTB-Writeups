@@ -8,13 +8,13 @@ A walkthrough of the **Soccer** machine on Hack The Box, a retired Linux box rat
 
 I started with an Nmap scan using `-sC -sV` to pull service versions. Three ports were open: SSH (22), HTTP (80), and something on **9091** that came back as an unknown service (`xmltec-xmlmail?`). That unknown port was an immediate flag to come back to later.
 
-![Nmap showing ports 22, 80, and 9091 open](01-nmap-ports.png)
+![Nmap showing ports 22, 80, and 9091 open](screenshots/01-nmap-ports.png)
 
-![Nmap version output: nginx on 80, redirect to soccer.htb](02-nmap-versions.png)
+![Nmap version output: nginx on 80, redirect to soccer.htb](screenshots/02-nmap-versions.png)
 
 Port 80 redirected to `soccer.htb`, so I added that name to my `/etc/hosts` file so my browser could resolve it.
 
-![Adding soccer.htb to /etc/hosts](03-hosts-soccer.png)
+![Adding soccer.htb to /etc/hosts](screenshots/03-hosts-soccer.png)
 
 **Lesson:** always enumerate *every* open port. The web server on 80 was the obvious target, but the odd service on 9091 turned out to be the real way in later.
 
@@ -22,11 +22,11 @@ Port 80 redirected to `soccer.htb`, so I added that name to my `/etc/hosts` file
 
 With nothing obvious on the main site, I ran **Gobuster** against it with a medium directory wordlist to find folders that exist but aren't linked anywhere.
 
-![Gobuster command against soccer.htb](04-gobuster-cmd.png)
+![Gobuster command against soccer.htb](screenshots/04-gobuster-cmd.png)
 
 It found `/tiny`, which returned a **301 redirect**. That's how I knew the folder existed even though nothing on the site pointed to it.
 
-![Gobuster result showing the /tiny directory](05-gobuster-tiny.png)
+![Gobuster result showing the /tiny directory](screenshots/05-gobuster-tiny.png)
 
 **Lesson:** content discovery finds the pages developers forgot to link or lock down. A hidden admin tool is a common first foothold.
 
@@ -34,11 +34,11 @@ It found `/tiny`, which returned a **301 redirect**. That's how I knew the folde
 
 The `/tiny` directory was a **Tiny File Manager** login. I tried the usual guesses like `admin`/`admin`, which didn't work.
 
-![Tiny File Manager login page](06-tinyfm-login.png)
+![Tiny File Manager login page](screenshots/06-tinyfm-login.png)
 
 Tiny File Manager is open source, so I looked up the project and found that it ships with default credentials hardcoded in `tinyfilemanager.php` (`admin` / `admin@123`) until an admin changes them. This box never changed them, so I logged straight in and could see the file listing.
 
-![Logged in, viewing the file manager](07-tinyfm-files.png)
+![Logged in, viewing the file manager](screenshots/07-tinyfm-files.png)
 
 **Lesson:** default credentials are one of the most common real-world weaknesses. Any app that ships with a known password has to force a change on first use.
 
@@ -46,37 +46,37 @@ Tiny File Manager is open source, so I looked up the project and found that it s
 
 Clicking through the folders, the `/tiny/uploads` directory stood out. The web app needs to write files there, which makes it writable, which makes it the perfect place to drop a web shell.
 
-![The writable uploads folder](08-uploads-folder.png)
+![The writable uploads folder](screenshots/08-uploads-folder.png)
 
 ## 5. Foothold: a PHP reverse shell
 
 I used the well-known PentestMonkey PHP reverse shell, editing it to point back at my machine.
 
-![Editing the reverse shell in nano](09-reverse-shell-php.png)
+![Editing the reverse shell in nano](screenshots/09-reverse-shell-php.png)
 
 I set the shell's `$ip` to my VPN address and picked a listening port.
 
-![Setting the IP and port in the shell](10-shell-config.png)
+![Setting the IP and port in the shell](screenshots/10-shell-config.png)
 
 Then I started a **Netcat** listener to catch the connection.
 
-![Netcat listener waiting on the chosen port](11-listener.png)
+![Netcat listener waiting on the chosen port](screenshots/11-listener.png)
 
 I uploaded the shell into `/tiny/uploads`, where it showed up in the file list.
 
-![The uploaded shell in the uploads folder](12-uploaded-shell.png)
+![The uploaded shell in the uploads folder](screenshots/12-uploaded-shell.png)
 
 Browsing to the file directly in the browser is what triggers it to run.
 
-![Triggering the shell by its URL](13-trigger-url.png)
+![Triggering the shell by its URL](screenshots/13-trigger-url.png)
 
 That fired the payload and my listener caught a shell. `id` came back as **www-data**, the low-privilege account the web server runs as.
 
-![Reverse shell caught as www-data](14-shell-caught.png)
+![Reverse shell caught as www-data](screenshots/14-shell-caught.png)
 
 I upgraded it to a proper interactive TTY with Python so it wouldn't die on me.
 
-![Upgrading to a full TTY with python3 pty](15-shell-upgrade.png)
+![Upgrading to a full TTY with python3 pty](screenshots/15-shell-upgrade.png)
 
 > Note: I've kept this to the method rather than a ready-to-run payload. The reverse shell is the standard public PentestMonkey script.
 
@@ -86,15 +86,15 @@ I upgraded it to a proper interactive TTY with Python so it wouldn't die on me.
 
 As www-data I read nginx's site configuration files to see what else the server hosts.
 
-![Reading the nginx site configs](16-nginx-cat.png)
+![Reading the nginx site configs](screenshots/16-nginx-cat.png)
 
 One config had a `server_name` for a second site that isn't linked anywhere public: **soc-player.soccer.htb**.
 
-![server_name soc-player.soccer.htb](17-nginx-servername.png)
+![server_name soc-player.soccer.htb](screenshots/17-nginx-servername.png)
 
 I added that hostname to `/etc/hosts` too so I could reach it.
 
-![Adding soc-player.soccer.htb to /etc/hosts](18-hosts-socplayer.png)
+![Adding soc-player.soccer.htb to /etc/hosts](screenshots/18-hosts-socplayer.png)
 
 **Lesson:** one server often hosts several sites by name (virtual hosts). Reading the web server config is a reliable way to find the ones that aren't advertised.
 
@@ -102,41 +102,41 @@ I added that hostname to `/etc/hosts` too so I could reach it.
 
 The new site let me create an account, so I signed up and logged in.
 
-![soc-player.soccer.htb signup page](19-socplayer-signup.png)
+![soc-player.soccer.htb signup page](screenshots/19-socplayer-signup.png)
 
-![Creating an account](20-signup-form.png)
+![Creating an account](screenshots/20-signup-form.png)
 
 Once logged in, I viewed the page source (Ctrl+U) and found the site talks to a backend over a **WebSocket**: `ws://soc-player.soccer.htb:9091/`. That's the mystery port 9091 from the very first Nmap scan.
 
-![WebSocket connection defined in the page's JavaScript](21-websocket-url.png)
+![WebSocket connection defined in the page's JavaScript](screenshots/21-websocket-url.png)
 
 ## 8. Blind SQL injection over the WebSocket
 
 The site has a ticket-check feature. It sends a ticket ID to the backend database over that WebSocket.
 
-![The ticket check page](22-ticket-check.png)
+![The ticket check page](screenshots/22-ticket-check.png)
 
 Testing an ID returned "Ticket Doesn't Exist," which confirmed the input reaches a database query. The `id` value isn't sanitized, which makes it vulnerable to **blind SQL injection**.
 
-![Ticket check returning a result](23-ticket-invalid.png)
+![Ticket check returning a result](screenshots/23-ticket-invalid.png)
 
 sqlmap can't talk to a WebSocket directly, so I ran a small Python bridge: it listens as a normal HTTP server on `localhost:8081`, takes each sqlmap payload, forwards it over the WebSocket, and returns the response.
 
-![The Python WebSocket bridge script](24-bridge-script.png)
+![The Python WebSocket bridge script](screenshots/24-bridge-script.png)
 
-![The bridge running and listening on localhost:8081](25-bridge-running.png)
+![The bridge running and listening on localhost:8081](screenshots/25-bridge-running.png)
 
 Then I pointed **sqlmap** at the bridge and told it to dump the `soccer_db` database.
 
-![sqlmap aimed at the local bridge](26-sqlmap-cmd.png)
+![sqlmap aimed at the local bridge](screenshots/26-sqlmap-cmd.png)
 
 sqlmap confirmed the injection and started pulling the `accounts` table out of `soccer_db`.
 
-![sqlmap fetching the accounts table](27-sqlmap-accounts.png)
+![sqlmap fetching the accounts table](screenshots/27-sqlmap-accounts.png)
 
 The dump exposed the `player` account's credentials. (The password is blacked out below.)
 
-![sqlmap dump with the password redacted](28-sqlmap-dump.png)
+![sqlmap dump with the password redacted](screenshots/28-sqlmap-dump.png)
 
 **Lesson:** any value that reaches a database query has to be parameterized, no matter how it's delivered. Using a WebSocket instead of a normal form didn't make the query any safer.
 
@@ -144,11 +144,11 @@ The dump exposed the `player` account's credentials. (The password is blacked ou
 
 www-data couldn't read `player`'s home directory, which is exactly why the database dump mattered. With the recovered password, I logged in over **SSH** as `player`.
 
-![SSH in as player](29-ssh-player.png)
+![SSH in as player](screenshots/29-ssh-player.png)
 
 From there I read **user.txt**. (The flag is blacked out.)
 
-![Reading the user flag, redacted](30-user-flag.png)
+![Reading the user flag, redacted](screenshots/30-user-flag.png)
 
 ## Key takeaways
 

@@ -24,11 +24,11 @@ flowchart LR
 
 I started with an Nmap scan of the target, which showed three open TCP ports: SSH (22), HTTP (80), and a service on 3000.
 
-![Nmap scan showing ports 22, 80, and 3000 open](01-nmap-scan.png)
+![Nmap scan showing ports 22, 80, and 3000 open](screenshots/01-nmap-scan.png)
 
 I added the target to my `/etc/hosts` file as `greenhorn.htb` so the web app would load correctly, then viewed the site's page source. It revealed the site was running **Pluck CMS version 4.7.18**.
 
-![Page source showing Pluck 4.7.18](02-pluck-version.png)
+![Page source showing Pluck 4.7.18](screenshots/02-pluck-version.png)
 
 **Lesson:** always enumerate *every* open port. The web server was the obvious target, but the service on port 3000 turned out to be the real way in.
 
@@ -36,11 +36,11 @@ I added the target to my `/etc/hosts` file as `greenhorn.htb` so the web app wou
 
 Pluck's admin panel needs a password, so rather than attacking the login page directly, I looked at the service on port 3000, which was a **Gitea** instance (a self-hosted code platform). Since Gitea hosts source code, I checked it for exposed repositories and found a **public repo containing the application's full source code**.
 
-![Public GreenAdmin/GreenHorn repository in Gitea](03-gitea-repo.png)
+![Public GreenAdmin/GreenHorn repository in Gitea](screenshots/03-gitea-repo.png)
 
 Pluck stores its admin password as a hash in a configuration file (`data/settings/pass.php`). Because the repo was public, that hash was sitting right there for anyone to read.
 
-![Admin password hash exposed in pass.php](04-pass-php-hash.png)
+![Admin password hash exposed in pass.php](screenshots/04-pass-php-hash.png)
 
 **Lesson:** secrets like password hashes should never be committed to a repository, especially a public one. This is a very common real-world mistake.
 
@@ -48,11 +48,11 @@ Pluck stores its admin password as a hash in a configuration file (`data/setting
 
 I copied the hash out of the exposed config file and first confirmed its type. `hashid` identified it as **SHA-512**.
 
-![hashid identifying the hash as SHA-512](05-hashid.png)
+![hashid identifying the hash as SHA-512](screenshots/05-hashid.png)
 
 I then cracked it offline with **Hashcat** (hash mode 1700, for SHA-512) using the well-known `rockyou.txt` wordlist. The hash matched a word in the list, recovering the plaintext admin password.
 
-![Hashcat cracking the SHA-512 hash](06-hashcat-cracked.png)
+![Hashcat cracking the SHA-512 hash](screenshots/06-hashcat-cracked.png)
 
 **Lesson:** offline cracking is fast and silent. Once an attacker has a hash, a weak or common password offers almost no protection, which is why strong, unique passwords matter.
 
@@ -60,15 +60,15 @@ I then cracked it offline with **Hashcat** (hash mode 1700, for SHA-512) using t
 
 I logged into the Pluck admin dashboard with the cracked password.
 
-![Pluck admin dashboard after login](07-pluck-admin.png)
+![Pluck admin dashboard after login](screenshots/07-pluck-admin.png)
 
 From there, I used the **"Install modules"** feature, which lets an admin upload a module as a ZIP file.
 
-![Pluck install modules upload page](08-install-modules.png)
+![Pluck install modules upload page](screenshots/08-install-modules.png)
 
 The flaw: this version of Pluck extracts an uploaded ZIP into the website folder **without checking its contents**. By packaging a PHP file into a ZIP, I could get my own code placed somewhere it would run on the server.
 
-![Packaging the module as a ZIP](09-zip-package.png)
+![Packaging the module as a ZIP](screenshots/09-zip-package.png)
 
 **Lesson:** file-upload features must validate what's being uploaded. Blindly extracting an archive into a web-accessible folder lets an attacker run their own code.
 
@@ -80,7 +80,7 @@ I started a **Netcat** listener and triggered the uploaded file, which caught a 
 
 Looking around, I found a real system account called `junior`, but www-data couldn't read its home folder. I suspected the admin had **reused their Pluck password** elsewhere. Using `su junior` with the same password I'd already cracked, I switched into that account, moved into its home folder, and read **user.txt**.
 
-![Switching to junior and reading the user flag](10-user-flag.png)
+![Switching to junior and reading the user flag](screenshots/10-user-flag.png)
 
 **Lesson:** password reuse is one of the most common ways attackers escalate access. The same cracked password worked in two completely different places.
 
