@@ -7,6 +7,7 @@ Write-ups from Hack The Box machines and HTB Academy modules I've completed. Fla
 | Machine | Difficulty | Summary |
 |---|---|---|
 | [GreenHorn](machines/greenhorn/) | Easy (Linux) | Leaked hash in a public Gitea repo, cracked with Hashcat, Pluck CMS module upload to a shell, password reuse for the user flag |
+| [Included](machines/included/) | Very Easy (Linux) | Local File Inclusion on a `?file=` parameter, a passwordless TFTP upload to deliver a PHP reverse shell, and credentials in `.htpasswd` for the user flag |
 | [Soccer](machines/soccer/) | Easy (Linux) | Default creds on Tiny File Manager, PHP upload to a shell, hidden vhost, and blind SQL injection over a WebSocket for the user flag |
 
 ## HTB Academy
